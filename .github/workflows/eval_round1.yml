@@ -1,0 +1,15 @@
+name: eval-round1
+on: { workflow_dispatch: {} }
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Sanity
+        run: python scripts/sanitize_predictions.py --pred predictions.csv || true
+      - name: Validate OOD
+        run: python scripts/validate_ood.py --pairs round1/pairs_with_ood.csv --threshold_id 0.5 --threshold_tan 0.30 || true
+      - name: Eval
+        run: python scripts/eval.py --truth round1/ground_truth.csv --pred predictions.csv --pairs round1/pairs_with_ood.csv --out round1/report_round1.json || true

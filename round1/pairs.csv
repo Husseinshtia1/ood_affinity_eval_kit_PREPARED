@@ -1,0 +1,3 @@
+id,track,protein_fasta_id,ligand_smiles_id,protein2_fasta_id,info,assay_type,prot_identity_min_to_train,lig_tanimoto_min_to_train,ood_one_side,ood_double
+item1,P-L,P1,L1,,S1,SPR,,,,
+item2,P-L,P2,L2,,S1,SPR,,,,
