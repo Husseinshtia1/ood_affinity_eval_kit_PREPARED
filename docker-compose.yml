@@ -3,8 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
+    env_file:
+      - .env.example
     ports:
       - '8000:8000'
+    volumes:
+      - prepared_storage:/tmp/prepared_jobs
     depends_on:
       - redis
 
@@ -15,5 +19,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.worker
+    env_file:
+      - .env.example
+    volumes:
+      - prepared_storage:/tmp/prepared_jobs
     depends_on:
       - redis
+
+volumes:
+  prepared_storage:
