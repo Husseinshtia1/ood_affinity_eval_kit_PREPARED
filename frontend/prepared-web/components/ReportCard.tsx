@@ -1,7 +1,11 @@
 'use client'
 
+import ConfidenceIntervals from './ConfidenceIntervals'
+import ParityPlot from './ParityPlot'
+
 type Report={
  metrics?:Record<string,number>
+ cis?:Record<string,[number,number]>
  acceptance?:{
    passed?:boolean
  }
@@ -18,7 +22,7 @@ return(
 <h2>Evaluation Report</h2>
 
 <div style={{padding:'10px',border:'1px solid gray',marginBottom:'15px'}}>
-Status: {passed ? 'PASSED' : 'FAILED'}
+Status: {passed ? 'PASSED':'FAILED'}
 </div>
 
 <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'10px'}}>
@@ -29,6 +33,9 @@ Status: {passed ? 'PASSED' : 'FAILED'}
 </div>
 ))}
 </div>
+
+<ConfidenceIntervals cis={report.cis}/>
+<ParityPlot/>
 </div>
 )
 }
