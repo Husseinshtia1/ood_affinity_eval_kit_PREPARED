@@ -1,7 +1,13 @@
 import {create} from 'zustand'
 
-export const useEvaluationStore=create((set)=>( {
+interface EvaluationState{
+ jobId:string
+ status:string
+ setJob:(id:string,status:string)=>void
+}
+
+export const useEvaluationStore=create<EvaluationState>((set)=>( {
  jobId:'',
  status:'Idle',
- setJob:(id:string,status:string)=>set({jobId:id,status})
+ setJob:(id,status)=>set({jobId:id,status})
 }))
