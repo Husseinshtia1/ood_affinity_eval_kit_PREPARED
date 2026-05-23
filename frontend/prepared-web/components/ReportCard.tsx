@@ -3,6 +3,8 @@
 import ConfidenceIntervals from './ConfidenceIntervals'
 import ParityPlot from './ParityPlot'
 
+type Point={truth:number,prediction:number}
+
 type Report={
  metrics?:Record<string,number>
  cis?:Record<string,[number,number]>
@@ -11,7 +13,7 @@ type Report={
  }
 }
 
-export default function ReportCard({report}:{report:Report}){
+export default function ReportCard({report,points=[]}:{report:Report,points?:Point[]}){
 if(!report)return null
 
 const metrics=report.metrics || {}
@@ -35,7 +37,7 @@ Status: {passed ? 'PASSED':'FAILED'}
 </div>
 
 <ConfidenceIntervals cis={report.cis}/>
-<ParityPlot/>
+<ParityPlot points={points}/>
 </div>
 )
 }
