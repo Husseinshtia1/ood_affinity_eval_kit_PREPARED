@@ -21,6 +21,21 @@ def assert_job_owner(job_id:str,current_user:User,db:Session):
    raise HTTPException(status_code=403,detail='Not authorized for this evaluation')
  return evaluation
 
+@router.get('')
+def list_evaluations(current_user:User=Depends(get_current_user),db:Session=Depends(get_db)):
+ evaluations=db.query(Evaluation).filter(Evaluation.owner_id==current_user.id).order_by(Evaluation.id.desc()).limit(50).all()
+ return {
+   'items':[
+     {
+       'job_id':evaluation.job_id,
+       'status':evaluation.status,
+       'owner_id':evaluation.owner_id,
+       'organization_id':current_user.organization_id,
+     }
+     for evaluation in evaluations
+   ]
+ }
+
 @router.post('/run')
 async def run(model_name:str=Form(...),training_set_hash:str=Form(...),predictions_file:UploadFile=File(...),current_user:User=Depends(get_current_user),db:Session=Depends(get_db)):
  job_id=str(uuid4())
