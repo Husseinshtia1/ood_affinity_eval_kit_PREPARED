@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     celery_result_backend: str = "redis://redis:6379/1"
     database_url: str = "postgresql+psycopg://prepared:prepared@postgres:5432/prepared"
 
+    jwt_secret_key: str = "CHANGE_ME_IN_PRODUCTION"
+    jwt_algorithm: str = "HS256"
+    jwt_access_minutes: int = 60
+
     allowed_origins: list[str] = [
         "http://localhost:3000",
         "https://prepared.ai",
