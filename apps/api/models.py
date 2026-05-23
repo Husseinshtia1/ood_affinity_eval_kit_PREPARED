@@ -1,4 +1,4 @@
-from sqlalchemy import String, ForeignKey, DateTime, func, JSON
+from sqlalchemy import String, ForeignKey, DateTime, func, JSON, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from .database import Base
 
@@ -50,4 +50,7 @@ class Invitation(Base):
     invited_by_user_id:Mapped[int]=mapped_column(ForeignKey('users.id'))
     expires_at:Mapped[str]=mapped_column(DateTime(timezone=True))
     accepted_at:Mapped[str | None]=mapped_column(DateTime(timezone=True),nullable=True)
+    delivery_status:Mapped[str]=mapped_column(String(50),default='pending')
+    delivery_attempts:Mapped[int]=mapped_column(Integer,default=0)
+    last_delivery_error:Mapped[str | None]=mapped_column(String(500),nullable=True)
     created_at:Mapped[str]=mapped_column(DateTime(timezone=True),server_default=func.now())
