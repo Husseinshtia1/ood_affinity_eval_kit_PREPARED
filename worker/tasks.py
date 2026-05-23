@@ -6,16 +6,30 @@ from apps.api.settings import get_settings
 from apps.api.schemas import JobStatus
 from apps.api.storage import report_path, points_path, update_status
 from apps.api.database import SessionLocal
-from apps.api.models import Evaluation
+from apps.api.models import Evaluation, AuditLog
 
 settings = get_settings()
 
 
-def update_db_status(job_id: str, status: JobStatus) -> None:
+def update_db_status(job_id: str, status: JobStatus, detail: str | None = None) -> None:
     with SessionLocal() as db:
         evaluation = db.query(Evaluation).filter(Evaluation.job_id == job_id).first()
         if evaluation:
+            previous_status = evaluation.status
             evaluation.status = status.value
+            db.add(AuditLog(
+                actor_user_id=None,
+                organization_id=None,
+                action='STATUS_CHANGED',
+                resource_type='evaluation',
+                resource_id=job_id,
+                metadata_json={
+                    'previous_status': previous_status,
+                    'new_status': status.value,
+                    'detail': detail,
+                    'source': 'worker'
+                }
+            ))
             db.commit()
 
 
@@ -23,10 +37,10 @@ def update_db_status(job_id: str, status: JobStatus) -> None:
 def evaluate_job(job_id: str, predictions_path: str):
     try:
         update_status(job_id, JobStatus.VALIDATING, "Prediction file accepted; starting validation.")
-        update_db_status(job_id, JobStatus.VALIDATING)
+        update_db_status(job_id, JobStatus.VALIDATING, "Prediction file accepted; starting validation.")
 
         update_status(job_id, JobStatus.RUNNING, "PREPARED evaluation engine is running.")
-        update_db_status(job_id, JobStatus.RUNNING)
+        update_db_status(job_id, JobStatus.RUNNING, "PREPARED evaluation engine is running.")
 
         report = run_prepared_evaluation(
             repo_root=settings.repo_root,
@@ -36,10 +50,11 @@ def evaluate_job(job_id: str, predictions_path: str):
         )
 
         update_status(job_id, JobStatus.COMPLETED, "Evaluation completed successfully.")
-        update_db_status(job_id, JobStatus.COMPLETED)
+        update_db_status(job_id, JobStatus.COMPLETED, "Evaluation completed successfully.")
         return report
 
     except Exception as exc:
-        update_status(job_id, JobStatus.FAILED, str(exc))
-        update_db_status(job_id, JobStatus.FAILED)
+        detail = str(exc)
+        update_status(job_id, JobStatus.FAILED, detail)
+        update_db_status(job_id, JobStatus.FAILED, detail)
         raise
