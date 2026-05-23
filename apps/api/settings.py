@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_minutes: int = 60
 
+    frontend_url: str = "http://localhost:3000"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str = "no-reply@prepared.ai"
+
     allowed_origins: list[str] = [
         "http://localhost:3000",
         "https://prepared.ai",
