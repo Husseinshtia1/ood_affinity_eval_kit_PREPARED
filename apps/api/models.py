@@ -38,3 +38,16 @@ class AuditLog(Base):
     resource_id:Mapped[str | None]=mapped_column(String(255),nullable=True)
     metadata_json:Mapped[dict | None]=mapped_column(JSON,nullable=True)
     created_at:Mapped[str]=mapped_column(DateTime(timezone=True),server_default=func.now())
+
+class Invitation(Base):
+    __tablename__='invitations'
+
+    id:Mapped[int]=mapped_column(primary_key=True)
+    email:Mapped[str]=mapped_column(String(255),index=True)
+    role:Mapped[str]=mapped_column(String(50),default='member')
+    token:Mapped[str]=mapped_column(String(255),unique=True,index=True)
+    organization_id:Mapped[int]=mapped_column(ForeignKey('organizations.id'))
+    invited_by_user_id:Mapped[int]=mapped_column(ForeignKey('users.id'))
+    expires_at:Mapped[str]=mapped_column(DateTime(timezone=True))
+    accepted_at:Mapped[str | None]=mapped_column(DateTime(timezone=True),nullable=True)
+    created_at:Mapped[str]=mapped_column(DateTime(timezone=True),server_default=func.now())
