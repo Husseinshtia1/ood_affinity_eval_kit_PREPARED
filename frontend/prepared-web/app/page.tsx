@@ -5,6 +5,15 @@ import {runEvaluation,getReport,getPoints} from '../services/api'
 import {useJobPolling} from '../hooks/useJobPolling'
 import ReportCard from '../components/ReportCard'
 
+function MetricCard({label,value}:{label:string,value:string}){
+ return(
+  <div style={{border:'1px solid #e5e7eb',borderRadius:'12px',padding:'16px',background:'#fff'}}>
+   <div style={{fontSize:'12px',color:'#6b7280',textTransform:'uppercase',letterSpacing:'0.04em'}}>{label}</div>
+   <div style={{fontSize:'24px',fontWeight:700,marginTop:'6px'}}>{value}</div>
+  </div>
+ )
+}
+
 export default function Home(){
  const [localStatus,setLocalStatus]=useState('Idle')
  const [jobId,setJobId]=useState('')
@@ -38,24 +47,45 @@ export default function Home(){
  },[jobId,status])
 
  return(
- <main style={{maxWidth:'760px',margin:'50px auto',padding:'24px'}}>
- <h1>PREPARED.ai</h1>
- <p>OOD binding-affinity evaluation workflow.</p>
+ <main style={{maxWidth:'1120px',margin:'40px auto',padding:'24px',fontFamily:'Inter, system-ui, sans-serif'}}>
+  <section style={{display:'flex',justifyContent:'space-between',gap:'24px',alignItems:'flex-start',marginBottom:'28px'}}>
+   <div>
+    <p style={{color:'#4f46e5',fontWeight:700,margin:0}}>PREPARED.ai</p>
+    <h1 style={{fontSize:'40px',lineHeight:1.1,margin:'8px 0'}}>BioAI OOD Validation Dashboard</h1>
+    <p style={{fontSize:'17px',color:'#4b5563',maxWidth:'700px'}}>
+     Turn binding-affinity model claims into reproducible evidence for out-of-distribution generalization.
+    </p>
+   </div>
+   <div style={{border:'1px solid #d1d5db',borderRadius:'999px',padding:'8px 14px',fontSize:'14px',background:'#f9fafb'}}>
+    Status: <strong>{status}</strong>
+   </div>
+  </section>
 
- <form onSubmit={submit}>
- <label>Model Name</label><br/>
- <input name='model_name' required/><br/><br/>
- <label>Training SHA256</label><br/>
- <input name='training_set_hash' required/><br/><br/>
- <label>Predictions CSV</label><br/>
- <input type='file' name='predictions_file' accept='.csv' required/><br/><br/>
- <button type='submit'>Run Evaluation</button>
- </form>
+  <section style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:'14px',marginBottom:'28px'}}>
+   <MetricCard label='Current job' value={jobId ? 'Active' : 'None'} />
+   <MetricCard label='Evaluation status' value={status} />
+   <MetricCard label='Report' value={report ? 'Ready' : 'Pending'} />
+   <MetricCard label='Points loaded' value={String(points.length)} />
+  </section>
 
- <p>Status: {status}</p>
- {jobId && <p>Job: {jobId}</p>}
+  <section style={{display:'grid',gridTemplateColumns:'380px 1fr',gap:'24px',alignItems:'start'}}>
+   <form onSubmit={submit} style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
+    <h2 style={{marginTop:0}}>Run evaluation</h2>
+    <label style={{fontWeight:600}}>Model Name</label><br/>
+    <input name='model_name' required style={{width:'100%',padding:'10px',margin:'8px 0 16px',border:'1px solid #d1d5db',borderRadius:'8px'}}/><br/>
+    <label style={{fontWeight:600}}>Training SHA256</label><br/>
+    <input name='training_set_hash' required style={{width:'100%',padding:'10px',margin:'8px 0 16px',border:'1px solid #d1d5db',borderRadius:'8px'}}/><br/>
+    <label style={{fontWeight:600}}>Predictions CSV</label><br/>
+    <input type='file' name='predictions_file' accept='.csv' required style={{width:'100%',margin:'8px 0 18px'}}/><br/>
+    <button type='submit' style={{width:'100%',padding:'12px 16px',borderRadius:'10px',border:0,background:'#4f46e5',color:'#fff',fontWeight:700,cursor:'pointer'}}>Run Evaluation</button>
+    {jobId && <p style={{fontSize:'13px',color:'#6b7280',wordBreak:'break-all'}}>Job: {jobId}</p>}
+   </form>
 
- <ReportCard report={report} points={points}/>
+   <section style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
+    <h2 style={{marginTop:0}}>Evidence package</h2>
+    <ReportCard report={report} points={points}/>
+   </section>
+  </section>
  </main>
  )
 }
