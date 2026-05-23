@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "PREPARED.ai API Gateway"
-    app_version: str = "0.1.0-p0"
+    app_version: str = "0.2.0-p2"
     environment: str = "development"
 
     repo_root: Path = Path(__file__).resolve().parents[2]
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     redis_url: str = "redis://redis:6379/0"
     celery_result_backend: str = "redis://redis:6379/1"
+    database_url: str = "postgresql+psycopg://prepared:prepared@postgres:5432/prepared"
 
     allowed_origins: list[str] = [
         "http://localhost:3000",
