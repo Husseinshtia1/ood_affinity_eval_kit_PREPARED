@@ -33,6 +33,20 @@ def invite_user(data: InviteUserRequest,current_user: User = Depends(require_rol
     if existing:
         raise HTTPException(status_code=400, detail='Email already exists')
 
+    now = datetime.now(timezone.utc)
+    active_invitation = (
+        db.query(Invitation)
+        .filter(
+            Invitation.email == data.email,
+            Invitation.organization_id == current_user.organization_id,
+            Invitation.accepted_at.is_(None),
+            Invitation.expires_at > now,
+        )
+        .first()
+    )
+    if active_invitation:
+        raise HTTPException(status_code=400, detail='Active invitation already exists for this email')
+
     token = token_urlsafe(32)
     invitation = Invitation(
         email=data.email,
@@ -40,7 +54,7 @@ def invite_user(data: InviteUserRequest,current_user: User = Depends(require_rol
         token=token,
         organization_id=current_user.organization_id,
         invited_by_user_id=current_user.id,
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=72),
+        expires_at=now + timedelta(hours=72),
     )
     db.add(invitation)
     db.flush()
