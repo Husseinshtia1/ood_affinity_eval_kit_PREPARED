@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .settings import get_settings
 from .production_guard import assert_safe_production_config
+from .rate_limit import InMemoryRateLimitMiddleware
 from .jobs import router as jobs_router
 from .health import router as health_router
 from .auth import router as auth_router
@@ -14,6 +15,7 @@ settings=get_settings()
 assert_safe_production_config(settings)
 
 app=FastAPI(title=settings.app_name,version=settings.app_version)
+app.add_middleware(InMemoryRateLimitMiddleware)
 
 app.add_middleware(
 CORSMiddleware,
