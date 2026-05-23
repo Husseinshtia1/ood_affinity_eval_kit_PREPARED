@@ -5,6 +5,7 @@ from .jobs import router as jobs_router
 from .health import router as health_router
 from .auth import router as auth_router
 from .auth_me import router as auth_me_router
+from .audit_routes import router as audit_router
 
 settings=get_settings()
 app=FastAPI(title=settings.app_name,version=settings.app_version)
@@ -21,6 +22,7 @@ app.include_router(jobs_router)
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(auth_me_router)
+app.include_router(audit_router)
 
 @app.get('/health')
 def health():
