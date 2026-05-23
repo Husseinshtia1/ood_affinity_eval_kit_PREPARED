@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from .schemas import JobStatus
 from .storage import save_upload,write_metadata,read_metadata,delete_job,report_path,points_path
 from .auth_dependencies import get_current_user
+from .audit import write_audit_event
 from .database import get_db
 from .models import User, Evaluation
 from worker.tasks import evaluate_job
@@ -21,28 +22,17 @@ def assert_job_owner(job_id:str,current_user:User,db:Session):
  return evaluation
 
 @router.post('/run')
-async def run(
- model_name:str=Form(...),
- training_set_hash:str=Form(...),
- predictions_file:UploadFile=File(...),
- current_user:User=Depends(get_current_user),
- db:Session=Depends(get_db)
-):
+async def run(model_name:str=Form(...),training_set_hash:str=Form(...),predictions_file:UploadFile=File(...),current_user:User=Depends(get_current_user),db:Session=Depends(get_db)):
  job_id=str(uuid4())
  path=await save_upload(job_id,predictions_file)
 
  evaluation=Evaluation(job_id=job_id,owner_id=current_user.id,status=JobStatus.PENDING.value)
  db.add(evaluation)
+ db.flush()
+ write_audit_event(db,'EVALUATION_CREATED','evaluation',job_id,actor=current_user,metadata={'model_name':model_name})
  db.commit()
 
- write_metadata(job_id,{
- 'evaluation_id':job_id,
- 'model_name':model_name,
- 'training_set_hash':training_set_hash,
- 'status':JobStatus.PENDING.value,
- 'owner_id':current_user.id,
- 'organization_id':current_user.organization_id
- })
+ write_metadata(job_id,{'evaluation_id':job_id,'model_name':model_name,'training_set_hash':training_set_hash,'status':JobStatus.PENDING.value,'owner_id':current_user.id,'organization_id':current_user.organization_id})
  evaluate_job.delay(job_id,str(path))
  return {'status':JobStatus.PENDING,'evaluation_id':job_id}
 
@@ -71,8 +61,9 @@ def points(job_id:str,current_user:User=Depends(get_current_user),db:Session=Dep
 
 @router.delete('/{job_id}')
 def remove(job_id:str,current_user:User=Depends(get_current_user),db:Session=Depends(get_db)):
- assert_job_owner(job_id,current_user,db)
+ evaluation=assert_job_owner(job_id,current_user,db)
  delete_job(job_id)
- db.query(Evaluation).filter(Evaluation.job_id==job_id).delete()
+ write_audit_event(db,'EVALUATION_DELETED','evaluation',job_id,actor=current_user,metadata={'previous_status':evaluation.status})
+ db.delete(evaluation)
  db.commit()
  return {'deleted':True}
