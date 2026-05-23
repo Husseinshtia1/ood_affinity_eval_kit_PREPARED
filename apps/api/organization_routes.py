@@ -1,12 +1,12 @@
+from datetime import datetime, timedelta, timezone
 from secrets import token_urlsafe
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from .audit import write_audit_event
-from .auth_security import hash_password
 from .database import get_db
-from .models import User
+from .models import User, Invitation
 from .rbac import require_roles
 
 router = APIRouter(prefix='/organization', tags=['organization'])
@@ -33,15 +33,22 @@ def invite_user(data: InviteUserRequest,current_user: User = Depends(require_rol
     if existing:
         raise HTTPException(status_code=400, detail='Email already exists')
 
-    temporary_password = token_urlsafe(18)
-    user = User(email=data.email,hashed_password=hash_password(temporary_password),role=data.role,organization_id=current_user.organization_id)
-    db.add(user)
+    token = token_urlsafe(32)
+    invitation = Invitation(
+        email=data.email,
+        role=data.role,
+        token=token,
+        organization_id=current_user.organization_id,
+        invited_by_user_id=current_user.id,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=72),
+    )
+    db.add(invitation)
     db.flush()
 
-    write_audit_event(db,'USER_INVITED','user',str(user.id),actor=current_user,metadata={'email': data.email, 'role': data.role})
+    write_audit_event(db,'USER_INVITED','invitation',str(invitation.id),actor=current_user,metadata={'email': data.email, 'role': data.role})
     db.commit()
 
-    return {'id': user.id,'email': user.email,'role': user.role,'temporary_password': temporary_password,'message': 'User created with a temporary password. Email delivery is not configured yet.'}
+    return {'invitation_id': invitation.id,'email': invitation.email,'role': invitation.role,'invitation_token': token,'expires_at': invitation.expires_at.isoformat(),'message': 'Invitation created. Email delivery is not configured yet.'}
 
 
 @router.patch('/users/{user_id}/role')
