@@ -60,6 +60,28 @@ def invite_user(data: InviteUserRequest,current_user: User = Depends(require_rol
 
     return {'invitation_id':invitation.id,'email':invitation.email,'role':invitation.role,'expires_at':invitation.expires_at.isoformat(),'message':'Invitation queued for delivery'}
 
+@router.post('/invitations/{invitation_id}/resend')
+def resend_invitation(invitation_id:int,current_user: User = Depends(require_roles('owner','admin')),db: Session = Depends(get_db)):
+    invitation=db.query(Invitation).filter(Invitation.id==invitation_id,Invitation.organization_id==current_user.organization_id).first()
+    if not invitation:
+      raise HTTPException(status_code=404,detail='Invitation not found')
+    if invitation.accepted_at:
+      raise HTTPException(status_code=400,detail='Accepted invitations cannot be resent')
+
+    now=datetime.now(timezone.utc)
+    if invitation.expires_at <= now:
+      invitation.token=token_urlsafe(32)
+      invitation.expires_at=now+timedelta(hours=72)
+
+    invitation.delivery_status='pending'
+    invitation.last_delivery_error=None
+    db.flush()
+
+    send_invitation_email_task.delay(invitation.id)
+    write_audit_event(db,'INVITATION_RESENT','invitation',str(invitation.id),actor=current_user,metadata={'email':invitation.email,'role':invitation.role})
+    db.commit()
+    return {'resent':True,'invitation':serialize_invitation(invitation)}
+
 @router.delete('/invitations/{invitation_id}')
 def revoke_invitation(invitation_id:int,current_user: User = Depends(require_roles('owner','admin')),db: Session = Depends(get_db)):
     invitation=db.query(Invitation).filter(Invitation.id==invitation_id,Invitation.organization_id==current_user.organization_id).first()
