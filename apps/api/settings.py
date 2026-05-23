@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     s3_prefix: str = "prepared/jobs"
 
     rate_limit_enabled: bool = True
+    rate_limit_backend: str = "memory"
     rate_limit_requests: int = 120
     rate_limit_window_seconds: int = 60
 
