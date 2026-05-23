@@ -20,6 +20,12 @@ export async function runEvaluation(formData:FormData){
  })
 }
 
+export async function listEvaluations(token?:string){
+ return requestJson(`${API_URL}/v1/evaluations`,{
+   headers:authHeaders(token)
+ })
+}
+
 export async function getStatus(jobId:string){
  return requestJson(`${API_URL}/v1/evaluations/${jobId}`)
 }
