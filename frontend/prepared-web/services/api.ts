@@ -23,3 +23,7 @@ export async function getStatus(jobId:string){
 export async function getReport(jobId:string){
  return requestJson(`${API_URL}/v1/evaluations/${jobId}/report`)
 }
+
+export async function getPoints(jobId:string){
+ return requestJson(`${API_URL}/v1/evaluations/${jobId}/points`)
+}
