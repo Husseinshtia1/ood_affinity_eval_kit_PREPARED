@@ -14,6 +14,9 @@ jobs:
       PYTHONPATH: .
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -26,11 +29,15 @@ jobs:
 
   frontend-build:
     runs-on: ubuntu-latest
+    needs: api-smoke
     defaults:
       run:
         working-directory: frontend/prepared-web
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
