@@ -1,7 +1,7 @@
 'use client'
 
 import {FormEvent,useEffect,useState} from 'react'
-import {runEvaluation,getReport} from '../services/api'
+import {runEvaluation,getReport,getPoints} from '../services/api'
 import {useJobPolling} from '../hooks/useJobPolling'
 import ReportCard from '../components/ReportCard'
 
@@ -9,6 +9,7 @@ export default function Home(){
  const [localStatus,setLocalStatus]=useState('Idle')
  const [jobId,setJobId]=useState('')
  const [report,setReport]=useState<any>(null)
+ const [points,setPoints]=useState([])
  const polledStatus=useJobPolling(jobId)
  const status=polledStatus || localStatus
 
@@ -16,6 +17,8 @@ export default function Home(){
    e.preventDefault()
    setLocalStatus('Uploading...')
    setReport(null)
+   setPoints([])
+
    const formData=new FormData(e.currentTarget)
    const data=await runEvaluation(formData)
    setJobId(data.evaluation_id)
@@ -23,39 +26,36 @@ export default function Home(){
  }
 
  useEffect(()=>{
-   async function loadReport(){
-     if(jobId && status==='COMPLETED'){
-       const data=await getReport(jobId)
-       setReport(data)
-     }
+ async function load(){
+   if(jobId && status==='COMPLETED'){
+      const reportData=await getReport(jobId)
+      const pointsData=await getPoints(jobId)
+      setReport(reportData)
+      setPoints(pointsData.points || [])
    }
-   loadReport()
+ }
+ load()
  },[jobId,status])
 
  return(
-   <main style={{maxWidth:'760px',margin:'50px auto',padding:'24px'}}>
-     <h1>PREPARED.ai</h1>
-     <p>OOD binding-affinity evaluation workflow.</p>
+ <main style={{maxWidth:'760px',margin:'50px auto',padding:'24px'}}>
+ <h1>PREPARED.ai</h1>
+ <p>OOD binding-affinity evaluation workflow.</p>
 
-     <form onSubmit={submit}>
-       <label>Model Name</label><br/>
-       <input name='model_name' placeholder='BioChem-Dock-v1' required/><br/><br/>
+ <form onSubmit={submit}>
+ <label>Model Name</label><br/>
+ <input name='model_name' required/><br/><br/>
+ <label>Training SHA256</label><br/>
+ <input name='training_set_hash' required/><br/><br/>
+ <label>Predictions CSV</label><br/>
+ <input type='file' name='predictions_file' accept='.csv' required/><br/><br/>
+ <button type='submit'>Run Evaluation</button>
+ </form>
 
-       <label>Training Set SHA256</label><br/>
-       <input name='training_set_hash' placeholder='64-character SHA256 hash' required/><br/><br/>
+ <p>Status: {status}</p>
+ {jobId && <p>Job: {jobId}</p>}
 
-       <label>Predictions CSV</label><br/>
-       <input type='file' name='predictions_file' accept='.csv' required/><br/><br/>
-
-       <button type='submit'>Run Evaluation</button>
-     </form>
-
-     <section>
-       <p>Status: {status}</p>
-       {jobId && <p>Job: {jobId}</p>}
-     </section>
-
-     <ReportCard report={report}/>
-   </main>
+ <ReportCard report={report} points={points}/>
+ </main>
  )
 }
