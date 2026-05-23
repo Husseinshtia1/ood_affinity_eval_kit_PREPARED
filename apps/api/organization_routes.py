@@ -17,6 +17,10 @@ class InviteUserRequest(BaseModel):
     role: str = Field(default='member', pattern='^(member|admin)$')
 
 
+class UpdateUserRoleRequest(BaseModel):
+    role: str = Field(pattern='^(member|admin|owner)$')
+
+
 @router.get('/users')
 def list_organization_users(current_user: User = Depends(require_roles('owner', 'admin')),db: Session = Depends(get_db)):
     users = db.query(User).filter(User.organization_id == current_user.organization_id).order_by(User.id.asc()).all()
@@ -38,3 +42,22 @@ def invite_user(data: InviteUserRequest,current_user: User = Depends(require_rol
     db.commit()
 
     return {'id': user.id,'email': user.email,'role': user.role,'temporary_password': temporary_password,'message': 'User created with a temporary password. Email delivery is not configured yet.'}
+
+
+@router.patch('/users/{user_id}/role')
+def update_user_role(user_id:int,data:UpdateUserRoleRequest,current_user:User=Depends(require_roles('owner')),db:Session=Depends(get_db)):
+    target=db.query(User).filter(User.id==user_id,User.organization_id==current_user.organization_id).first()
+    if not target:
+        raise HTTPException(status_code=404,detail='User not found')
+
+    previous_role=target.role
+    if previous_role=='owner' and data.role!='owner':
+        owner_count=db.query(User).filter(User.organization_id==current_user.organization_id,User.role=='owner').count()
+        if owner_count<=1:
+            raise HTTPException(status_code=400,detail='Cannot demote the last owner')
+
+    target.role=data.role
+    write_audit_event(db,'USER_ROLE_CHANGED','user',str(target.id),actor=current_user,metadata={'previous_role':previous_role,'new_role':data.role})
+    db.commit()
+
+    return {'id':target.id,'email':target.email,'role':target.role}
