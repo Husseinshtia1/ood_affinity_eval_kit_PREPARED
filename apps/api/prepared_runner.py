@@ -15,24 +15,40 @@ def run_command(args: list[str], cwd: Path):
     return result.stdout
 
 
+def _clean_reader(fp):
+    return csv.DictReader(row for row in fp if row.strip() and not row.startswith('#'))
+
+
 def _read_truth(path: Path) -> dict[str, float]:
     with path.open(newline='', encoding='utf-8') as f:
-        return {row['id']: float(row['pK']) for row in csv.DictReader(r for r in f if r.strip() and not r.startswith('#'))}
+        return {row['id']: float(row['pK']) for row in _clean_reader(f)}
 
 
 def _read_pred(path: Path) -> dict[str, float]:
     with path.open(newline='', encoding='utf-8') as f:
-        return {row['id']: float(row['y_pred_pK']) for row in csv.DictReader(r for r in f if r.strip() and not r.startswith('#'))}
+        return {row['id']: float(row['y_pred_pK']) for row in _clean_reader(f)}
 
 
 def export_parity_points(truth_path: Path, predictions_csv: Path, points_path: Path) -> list[dict]:
     truth = _read_truth(truth_path)
     pred = _read_pred(predictions_csv)
-    points = [
-        {'id': item_id, 'truth': truth_value, 'prediction': pred[item_id]}
-        for item_id, truth_value in truth.items()
-        if item_id in pred
-    ]
+    points = []
+
+    for item_id, truth_value in truth.items():
+        if item_id not in pred:
+            continue
+        prediction = pred[item_id]
+        error = prediction - truth_value
+        abs_error = abs(error)
+        points.append({
+            'id': item_id,
+            'truth': truth_value,
+            'prediction': prediction,
+            'error': error,
+            'abs_error': abs_error,
+            'within_0_30': abs_error <= 0.30,
+        })
+
     points_path.write_text(json.dumps({'points': points}, indent=2), encoding='utf-8')
     return points
 
