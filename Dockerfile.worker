@@ -1,5 +1,19 @@
 FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
 WORKDIR /app
-COPY . .
-RUN pip install celery redis fastapi pydantic-settings
-CMD ["celery","-A","worker.celery_app.celery_app","worker","--loglevel=info"]
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-api.txt ./requirements-api.txt
+RUN pip install --no-cache-dir -r requirements-api.txt
+
+COPY apps ./apps
+COPY worker ./worker
+
+CMD ["celery","-A","worker.celery_app","worker","--loglevel=info"]
