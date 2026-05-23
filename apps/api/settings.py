@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     temp_storage_dir: Path = Path("/tmp/prepared_jobs")
     max_upload_bytes: int = 25 * 1024 * 1024
 
+    storage_backend: str = "local"
+    s3_bucket: str | None = None
+    s3_region: str | None = None
+    s3_prefix: str = "prepared/jobs"
+
     redis_url: str = "redis://redis:6379/0"
     celery_result_backend: str = "redis://redis:6379/1"
     database_url: str = "postgresql+psycopg://prepared:prepared@postgres:5432/prepared"
