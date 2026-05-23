@@ -1,6 +1,6 @@
 'use client'
 
-type Point={truth:number,prediction:number}
+type Point={truth:number,prediction:number,error?:number,abs_error?:number,within_0_30?:boolean}
 
 export default function ParityPlot({points=[]}:{points?:Point[]}){
  const width=420
@@ -24,6 +24,7 @@ export default function ParityPlot({points=[]}:{points?:Point[]}){
  return(
  <section style={{marginTop:'24px'}}>
  <h3>Parity Plot</h3>
+ <p style={{fontSize:'12px'}}>Green = within ±0.30 log10(pK), Red = outside threshold.</p>
  <svg width={width} height={height} style={{border:'1px solid #334155',background:'#020617'}}>
  <line x1={pad} y1={height-pad} x2={width-pad} y2={height-pad} stroke='#64748b'/>
  <line x1={pad} y1={height-pad} x2={pad} y2={pad} stroke='#64748b'/>
@@ -35,7 +36,8 @@ export default function ParityPlot({points=[]}:{points?:Point[]}){
  {points.map((p,i)=>{
  const x=pad+scale(p.truth)*plotW
  const y=height-pad-scale(p.prediction)*plotH
- return <circle key={i} cx={x} cy={y} r='4' fill='#38bdf8'><title>{`${p.truth} → ${p.prediction}`}</title></circle>
+ const ok=p.within_0_30!==false
+ return <circle key={i} cx={x} cy={y} r='4' fill={ok?'#22c55e':'#ef4444'}><title>{`truth=${p.truth}, pred=${p.prediction}, abs_error=${p.abs_error ?? 'n/a'}`}</title></circle>
  })}
  </svg>
  </section>
