@@ -7,6 +7,7 @@ from apps.api.schemas import JobStatus
 from apps.api.storage import report_path, points_path, update_status
 from apps.api.database import SessionLocal
 from apps.api.models import Evaluation, AuditLog
+from apps.api.notifications import send_invitation_email
 
 settings = get_settings()
 
@@ -31,6 +32,12 @@ def update_db_status(job_id: str, status: JobStatus, detail: str | None = None) 
                 }
             ))
             db.commit()
+
+
+@celery_app.task(name='prepared.send_invitation_email')
+def send_invitation_email_task(email: str, token: str):
+    delivered = send_invitation_email(email, token)
+    return {'delivered': delivered, 'email': email}
 
 
 @celery_app.task(name="prepared.evaluate")
