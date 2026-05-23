@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 
 import redis
 from fastapi import Request, Response
+from jose import JWTError, jwt
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -21,13 +22,26 @@ class InMemoryRateLimitMiddleware(BaseHTTPMiddleware):
         if self.settings.rate_limit_backend == 'redis':
             self.redis_client = redis.Redis.from_url(self.settings.redis_url, decode_responses=True)
 
-    def client_key(self, request: Request) -> str:
+    def ip_key(self, request: Request) -> str:
         forwarded_for = request.headers.get('x-forwarded-for')
         if forwarded_for:
-            return forwarded_for.split(',', 1)[0].strip()
+            return f"ip:{forwarded_for.split(',', 1)[0].strip()}"
         if request.client:
-            return request.client.host
-        return 'unknown'
+            return f'ip:{request.client.host}'
+        return 'ip:unknown'
+
+    def client_key(self, request: Request) -> str:
+        authorization = request.headers.get('authorization')
+        if authorization and authorization.lower().startswith('bearer '):
+            token = authorization.split(' ', 1)[1].strip()
+            try:
+                payload = jwt.decode(token, self.settings.jwt_secret_key, algorithms=[self.settings.jwt_algorithm])
+                subject = payload.get('sub')
+                if subject:
+                    return f'user:{subject}'
+            except JWTError:
+                pass
+        return self.ip_key(request)
 
     def rate_limit_response(self, retry_after: int) -> JSONResponse:
         return JSONResponse(
