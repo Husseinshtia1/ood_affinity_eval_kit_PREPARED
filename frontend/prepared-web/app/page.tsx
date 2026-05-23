@@ -128,6 +128,16 @@ export default function Home(){
       <p style={{fontSize:'13px',color:'#6b7280'}}>Invitation status: {inviteStatus}</p>
      </form>
     </section>
+
+    <section style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
+     <h2 style={{marginTop:0}}>Billing status</h2>
+     <div style={{display:'grid',gap:'10px',fontSize:'14px',color:'#374151'}}>
+      <p style={{margin:0}}><strong>Plan:</strong> Evaluation / not connected</p>
+      <p style={{margin:0}}><strong>Payments:</strong> Disabled</p>
+      <p style={{margin:0}}><strong>Provider:</strong> Not configured</p>
+      <p style={{margin:0,color:'#6b7280'}}>Billing is intentionally disabled until provider, webhook, tax, and legal review are completed.</p>
+     </div>
+    </section>
    </div>
 
    <div style={{display:'grid',gap:'18px'}}>
