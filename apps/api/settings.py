@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     s3_region: str | None = None
     s3_prefix: str = "prepared/jobs"
 
+    rate_limit_enabled: bool = True
+    rate_limit_requests: int = 120
+    rate_limit_window_seconds: int = 60
+
     redis_url: str = "redis://redis:6379/0"
     celery_result_backend: str = "redis://redis:6379/1"
     database_url: str = "postgresql+psycopg://prepared:prepared@postgres:5432/prepared"
