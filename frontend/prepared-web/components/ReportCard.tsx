@@ -2,8 +2,9 @@
 
 import ConfidenceIntervals from './ConfidenceIntervals'
 import ParityPlot from './ParityPlot'
+import ErrorDistribution from './ErrorDistribution'
 
-type Point={truth:number,prediction:number}
+type Point={truth:number,prediction:number,error?:number,abs_error?:number,within_0_30?:boolean}
 
 type Report={
  metrics?:Record<string,number>
@@ -38,6 +39,7 @@ Status: {passed ? 'PASSED':'FAILED'}
 
 <ConfidenceIntervals cis={report.cis}/>
 <ParityPlot points={points}/>
+<ErrorDistribution points={points}/>
 </div>
 )
 }
