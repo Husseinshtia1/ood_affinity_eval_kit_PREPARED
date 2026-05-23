@@ -25,6 +25,10 @@ def report_path(job_id: str) -> Path:
     return job_dir(job_id) / "report.json"
 
 
+def points_path(job_id: str) -> Path:
+    return job_dir(job_id) / "parity_points.json"
+
+
 def metadata_path(job_id: str) -> Path:
     return job_dir(job_id) / "metadata.json"
 
