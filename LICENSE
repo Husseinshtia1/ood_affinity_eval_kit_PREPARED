@@ -1,0 +1,61 @@
+PREPARED.ai Commercial Open Source License
+Version 1.0
+
+Copyright (c) 2026 Hussein Shtia
+
+This project is released as source-available and open for research, evaluation, educational use, internal commercial use, and contribution, subject to the terms below.
+
+1. Granted Rights
+
+You may:
+- View, download, copy, fork, and modify the source code.
+- Use the software for academic, research, educational, and internal commercial evaluation purposes.
+- Run the software internally within an organization.
+- Create derivative works for private or internal use.
+- Submit issues, pull requests, improvements, and documentation contributions.
+
+2. Commercial Use
+
+Commercial use is permitted only for internal evaluation, internal deployment, research, benchmarking, and non-resale operational use.
+
+You may not, without a separate written commercial agreement from the copyright holder:
+- Sell, sublicense, rent, lease, host, or provide the software as a paid service to third parties.
+- Offer a competing SaaS, hosted API, managed evaluation platform, or commercial product substantially based on this software.
+- Repackage the software as a commercial product or white-label platform.
+- Use the PREPARED.ai name, logo, branding, certificates, or marks in a commercial offering.
+
+3. Open Source Availability
+
+The source code may remain publicly available. Public forks are allowed if they preserve this license, copyright notice, and attribution.
+
+4. Attribution
+
+All copies, forks, substantial portions, or derivative works must retain attribution to:
+
+PREPARED.ai — OOD Binding Affinity Evaluation Kit
+Created by Hussein Shtia
+Repository: https://github.com/Husseinshtia1/ood_affinity_eval_kit_PREPARED
+
+5. No Warranty
+
+The software is provided "as is", without warranty of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, non-infringement, regulatory compliance, clinical validity, or suitability for pharmaceutical, medical, or diagnostic use.
+
+6. No Clinical or Regulatory Claim
+
+This software is intended for research and evaluation workflows. It does not provide medical advice, clinical diagnosis, regulatory approval, or pharmaceutical validation by itself. Any use in regulated environments requires independent validation, human review, and applicable legal, ethical, and regulatory compliance.
+
+7. Trademark and Brand Restrictions
+
+The names PREPARED.ai, PREPARED Certificates, and related branding may not be used to promote derivative works, hosted services, commercial products, or public claims without prior written permission.
+
+8. Separate Commercial License
+
+Organizations wishing to use this software as part of a commercial SaaS, managed service, enterprise deployment, certification business, or paid platform must obtain a separate commercial license from the copyright holder.
+
+9. Termination
+
+Any violation of these terms automatically terminates the rights granted under this license. Upon termination, you must cease use, distribution, and hosting of the software unless a separate written agreement is obtained.
+
+10. Governing Understanding
+
+This license is designed to keep the project publicly visible and collaborative while protecting the creator's right to commercialize PREPARED.ai and related enterprise services.
