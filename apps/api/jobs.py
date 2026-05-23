@@ -1,7 +1,7 @@
 from uuid import uuid4
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from .schemas import JobStatus
-from .storage import save_upload,write_metadata,read_metadata,delete_job,report_path
+from .storage import save_upload,write_metadata,read_metadata,delete_job,report_path,points_path
 from worker.tasks import evaluate_job
 import json
 
@@ -29,6 +29,13 @@ def report(job_id:str):
  p=report_path(job_id)
  if not p.exists():
    raise HTTPException(status_code=404,detail='Report not available')
+ return json.loads(p.read_text())
+
+@router.get('/{job_id}/points')
+def points(job_id:str):
+ p=points_path(job_id)
+ if not p.exists():
+   raise HTTPException(status_code=404,detail='Points not available')
  return json.loads(p.read_text())
 
 @router.delete('/{job_id}')
