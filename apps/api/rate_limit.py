@@ -37,6 +37,9 @@ class InMemoryRateLimitMiddleware(BaseHTTPMiddleware):
             try:
                 payload = jwt.decode(token, self.settings.jwt_secret_key, algorithms=[self.settings.jwt_algorithm])
                 subject = payload.get('sub')
+                organization_id = payload.get('organization_id')
+                if subject and organization_id:
+                    return f'org:{organization_id}:user:{subject}'
                 if subject:
                     return f'user:{subject}'
             except JWTError:
