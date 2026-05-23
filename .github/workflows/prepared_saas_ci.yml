@@ -22,7 +22,7 @@ jobs:
       - name: Import FastAPI app
         run: python -c "from apps.api.main import app; print(app.title)"
       - name: Run API tests
-        run: pytest tests -v
+        run: PYTHONPATH=. pytest tests -v
 
   frontend-build:
     runs-on: ubuntu-latest
