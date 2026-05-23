@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from .auth_dependencies import get_current_user
 from .database import get_db
 from .models import AuditLog, User
+from .rbac import require_roles
 
 router = APIRouter(prefix='/audit', tags=['audit'])
 
@@ -11,7 +11,7 @@ router = APIRouter(prefix='/audit', tags=['audit'])
 @router.get('')
 def list_audit_events(
     limit: int = Query(default=50, ge=1, le=200),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles('owner', 'admin')),
     db: Session = Depends(get_db),
 ):
     events = (
