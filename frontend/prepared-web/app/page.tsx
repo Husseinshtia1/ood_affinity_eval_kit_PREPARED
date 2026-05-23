@@ -1,7 +1,7 @@
 'use client'
 
 import {FormEvent,useEffect,useState} from 'react'
-import {runEvaluation,getReport,getPoints} from '../services/api'
+import {runEvaluation,getReport,getPoints,inviteOrganizationUser} from '../services/api'
 import {useJobPolling} from '../hooks/useJobPolling'
 import ReportCard from '../components/ReportCard'
 
@@ -19,6 +19,8 @@ export default function Home(){
  const [jobId,setJobId]=useState('')
  const [report,setReport]=useState<any>(null)
  const [points,setPoints]=useState([])
+ const [authToken,setAuthToken]=useState('')
+ const [inviteStatus,setInviteStatus]=useState('Ready')
  const polledStatus=useJobPolling(jobId)
  const status=polledStatus || localStatus
 
@@ -32,6 +34,21 @@ export default function Home(){
    const data=await runEvaluation(formData)
    setJobId(data.evaluation_id)
    setLocalStatus(data.status)
+ }
+
+ async function submitInvitation(e:FormEvent<HTMLFormElement>){
+   e.preventDefault()
+   setInviteStatus('Sending...')
+   const formData=new FormData(e.currentTarget)
+   const email=String(formData.get('email') || '')
+   const role=String(formData.get('role') || 'member')
+   try{
+    await inviteOrganizationUser(email,role,authToken || undefined)
+    setInviteStatus('Invitation queued')
+    e.currentTarget.reset()
+   }catch(error:any){
+    setInviteStatus(error?.message || 'Invitation failed')
+   }
  }
 
  useEffect(()=>{
@@ -69,17 +86,36 @@ export default function Home(){
   </section>
 
   <section style={{display:'grid',gridTemplateColumns:'380px 1fr',gap:'24px',alignItems:'start'}}>
-   <form onSubmit={submit} style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
-    <h2 style={{marginTop:0}}>Run evaluation</h2>
-    <label style={{fontWeight:600}}>Model Name</label><br/>
-    <input name='model_name' required style={{width:'100%',padding:'10px',margin:'8px 0 16px',border:'1px solid #d1d5db',borderRadius:'8px'}}/><br/>
-    <label style={{fontWeight:600}}>Training SHA256</label><br/>
-    <input name='training_set_hash' required style={{width:'100%',padding:'10px',margin:'8px 0 16px',border:'1px solid #d1d5db',borderRadius:'8px'}}/><br/>
-    <label style={{fontWeight:600}}>Predictions CSV</label><br/>
-    <input type='file' name='predictions_file' accept='.csv' required style={{width:'100%',margin:'8px 0 18px'}}/><br/>
-    <button type='submit' style={{width:'100%',padding:'12px 16px',borderRadius:'10px',border:0,background:'#4f46e5',color:'#fff',fontWeight:700,cursor:'pointer'}}>Run Evaluation</button>
-    {jobId && <p style={{fontSize:'13px',color:'#6b7280',wordBreak:'break-all'}}>Job: {jobId}</p>}
-   </form>
+   <div style={{display:'grid',gap:'18px'}}>
+    <form onSubmit={submit} style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
+     <h2 style={{marginTop:0}}>Run evaluation</h2>
+     <label style={{fontWeight:600}}>Model Name</label><br/>
+     <input name='model_name' required style={{width:'100%',padding:'10px',margin:'8px 0 16px',border:'1px solid #d1d5db',borderRadius:'8px'}}/><br/>
+     <label style={{fontWeight:600}}>Training SHA256</label><br/>
+     <input name='training_set_hash' required style={{width:'100%',padding:'10px',margin:'8px 0 16px',border:'1px solid #d1d5db',borderRadius:'8px'}}/><br/>
+     <label style={{fontWeight:600}}>Predictions CSV</label><br/>
+     <input type='file' name='predictions_file' accept='.csv' required style={{width:'100%',margin:'8px 0 18px'}}/><br/>
+     <button type='submit' style={{width:'100%',padding:'12px 16px',borderRadius:'10px',border:0,background:'#4f46e5',color:'#fff',fontWeight:700,cursor:'pointer'}}>Run Evaluation</button>
+     {jobId && <p style={{fontSize:'13px',color:'#6b7280',wordBreak:'break-all'}}>Job: {jobId}</p>}
+    </form>
+
+    <section style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
+     <h2 style={{marginTop:0}}>Organization access</h2>
+     <label style={{fontWeight:600}}>Bearer token</label>
+     <textarea value={authToken} onChange={(e)=>setAuthToken(e.target.value)} placeholder='Paste an owner/admin JWT for invitation actions' style={{width:'100%',minHeight:'72px',padding:'10px',margin:'8px 0 16px',border:'1px solid #d1d5db',borderRadius:'8px'}} />
+     <form onSubmit={submitInvitation}>
+      <label style={{fontWeight:600}}>Invite email</label><br/>
+      <input name='email' type='email' required style={{width:'100%',padding:'10px',margin:'8px 0 12px',border:'1px solid #d1d5db',borderRadius:'8px'}} />
+      <label style={{fontWeight:600}}>Role</label><br/>
+      <select name='role' defaultValue='member' style={{width:'100%',padding:'10px',margin:'8px 0 16px',border:'1px solid #d1d5db',borderRadius:'8px'}}>
+       <option value='member'>member</option>
+       <option value='admin'>admin</option>
+      </select>
+      <button type='submit' style={{width:'100%',padding:'12px 16px',borderRadius:'10px',border:'1px solid #4f46e5',background:'#fff',color:'#4f46e5',fontWeight:700,cursor:'pointer'}}>Send Invitation</button>
+      <p style={{fontSize:'13px',color:'#6b7280'}}>Invitation status: {inviteStatus}</p>
+     </form>
+    </section>
+   </div>
 
    <section style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
     <h2 style={{marginTop:0}}>Evidence package</h2>
