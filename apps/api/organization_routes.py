@@ -26,7 +26,7 @@ def serialize_invitation(invitation: Invitation) -> dict:
       status='accepted'
     elif invitation.expires_at <= now:
       status='expired'
-    return {'id': invitation.id,'email': invitation.email,'role': invitation.role,'organization_id': invitation.organization_id,'invited_by_user_id': invitation.invited_by_user_id,'status': status,'expires_at': invitation.expires_at.isoformat() if invitation.expires_at else None,'accepted_at': invitation.accepted_at.isoformat() if invitation.accepted_at else None,'created_at': invitation.created_at.isoformat() if invitation.created_at else None}
+    return {'id': invitation.id,'email': invitation.email,'role': invitation.role,'organization_id': invitation.organization_id,'invited_by_user_id': invitation.invited_by_user_id,'status': status,'delivery_status': invitation.delivery_status,'delivery_attempts': invitation.delivery_attempts,'last_delivery_error': invitation.last_delivery_error,'expires_at': invitation.expires_at.isoformat() if invitation.expires_at else None,'accepted_at': invitation.accepted_at.isoformat() if invitation.accepted_at else None,'created_at': invitation.created_at.isoformat() if invitation.created_at else None}
 
 @router.get('/users')
 def list_organization_users(current_user: User = Depends(require_roles('owner', 'admin')),db: Session = Depends(get_db)):
@@ -54,7 +54,7 @@ def invite_user(data: InviteUserRequest,current_user: User = Depends(require_rol
     db.add(invitation)
     db.flush()
 
-    send_invitation_email_task.delay(data.email,token)
+    send_invitation_email_task.delay(invitation.id)
     write_audit_event(db,'USER_INVITED','invitation',str(invitation.id),actor=current_user,metadata={'email':data.email,'role':data.role,'notification':'queued'})
     db.commit()
 
