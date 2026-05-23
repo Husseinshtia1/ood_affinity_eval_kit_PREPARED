@@ -14,6 +14,7 @@ GET /health
 POST /v1/evaluations/run
 GET /v1/evaluations/{job_id}
 GET /v1/evaluations/{job_id}/report
+GET /v1/evaluations/{job_id}/points
 DELETE /v1/evaluations/{job_id}
 
 ## Current architecture
@@ -27,3 +28,7 @@ Redis Queue
 Celery Worker
 ↓
 PREPARED evaluation kit
+
+## CI
+
+PREPARED SaaS CI validates the API import path and frontend build on pushes to main.
