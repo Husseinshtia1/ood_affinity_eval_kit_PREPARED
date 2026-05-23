@@ -7,7 +7,7 @@ from fastapi import UploadFile, HTTPException
 
 from .schemas import JobStatus
 from .settings import get_settings
-from .storage_backends import LocalStorageBackend, get_storage_backend
+from .storage_backends import LocalStorageBackend, S3StorageBackend, get_storage_backend
 
 settings = get_settings()
 
@@ -19,12 +19,21 @@ def require_local_backend() -> LocalStorageBackend:
     return backend
 
 
+def local_fallback_dir(job_id: str) -> Path:
+    path = settings.temp_storage_dir / job_id
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def job_dir(job_id: str) -> Path:
     return require_local_backend().job_dir(job_id)
 
 
 def predictions_path(job_id: str) -> Path:
-    return require_local_backend().object_path(job_id, "predictions.csv")
+    backend = get_storage_backend()
+    if isinstance(backend, LocalStorageBackend):
+        return backend.object_path(job_id, "predictions.csv")
+    return local_fallback_dir(job_id) / "predictions.csv"
 
 
 def report_path(job_id: str) -> Path:
@@ -73,11 +82,22 @@ async def save_upload(job_id: str, upload: UploadFile) -> Path:
             if total > settings.max_upload_bytes:
                 raise HTTPException(status_code=413, detail="Uploaded file exceeds maximum allowed size")
             buffer.write(chunk)
+
+    backend = get_storage_backend()
+    if isinstance(backend, S3StorageBackend):
+        backend.upload_file(target, job_id, "predictions.csv")
+
     return target
 
 
 def delete_job(job_id: str) -> None:
-    backend = require_local_backend()
-    path = backend.root / job_id
+    backend = get_storage_backend()
+    if isinstance(backend, LocalStorageBackend):
+        path = backend.root / job_id
+        if path.exists():
+            shutil.rmtree(path)
+        return
+
+    path = settings.temp_storage_dir / job_id
     if path.exists():
         shutil.rmtree(path)
