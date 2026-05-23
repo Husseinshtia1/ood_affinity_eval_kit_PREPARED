@@ -1,7 +1,7 @@
 'use client'
 
 import {FormEvent,useEffect,useState} from 'react'
-import {runEvaluation,getReport,getPoints,inviteOrganizationUser} from '../services/api'
+import {runEvaluation,getReport,getPoints,inviteOrganizationUser,listEvaluations} from '../services/api'
 import {useJobPolling} from '../hooks/useJobPolling'
 import ReportCard from '../components/ReportCard'
 
@@ -21,6 +21,8 @@ export default function Home(){
  const [points,setPoints]=useState([])
  const [authToken,setAuthToken]=useState('')
  const [inviteStatus,setInviteStatus]=useState('Ready')
+ const [history,setHistory]=useState<any[]>([])
+ const [historyStatus,setHistoryStatus]=useState('Not loaded')
  const polledStatus=useJobPolling(jobId)
  const status=polledStatus || localStatus
 
@@ -49,6 +51,17 @@ export default function Home(){
    }catch(error:any){
     setInviteStatus(error?.message || 'Invitation failed')
    }
+ }
+
+ async function loadHistory(){
+  setHistoryStatus('Loading...')
+  try{
+   const data=await listEvaluations(authToken || undefined)
+   setHistory(data.items || [])
+   setHistoryStatus('Loaded')
+  }catch(error:any){
+   setHistoryStatus(error?.message || 'Failed to load history')
+  }
  }
 
  useEffect(()=>{
@@ -102,7 +115,7 @@ export default function Home(){
     <section style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
      <h2 style={{marginTop:0}}>Organization access</h2>
      <label style={{fontWeight:600}}>Bearer token</label>
-     <textarea value={authToken} onChange={(e)=>setAuthToken(e.target.value)} placeholder='Paste an owner/admin JWT for invitation actions' style={{width:'100%',minHeight:'72px',padding:'10px',margin:'8px 0 16px',border:'1px solid #d1d5db',borderRadius:'8px'}} />
+     <textarea value={authToken} onChange={(e)=>setAuthToken(e.target.value)} placeholder='Paste an owner/admin JWT for invitation and history actions' style={{width:'100%',minHeight:'72px',padding:'10px',margin:'8px 0 16px',border:'1px solid #d1d5db',borderRadius:'8px'}} />
      <form onSubmit={submitInvitation}>
       <label style={{fontWeight:600}}>Invite email</label><br/>
       <input name='email' type='email' required style={{width:'100%',padding:'10px',margin:'8px 0 12px',border:'1px solid #d1d5db',borderRadius:'8px'}} />
@@ -117,10 +130,44 @@ export default function Home(){
     </section>
    </div>
 
-   <section style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
-    <h2 style={{marginTop:0}}>Evidence package</h2>
-    <ReportCard report={report} points={points}/>
-   </section>
+   <div style={{display:'grid',gap:'18px'}}>
+    <section style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
+     <h2 style={{marginTop:0}}>Evidence package</h2>
+     <ReportCard report={report} points={points}/>
+    </section>
+
+    <section style={{border:'1px solid #e5e7eb',borderRadius:'16px',padding:'22px',background:'#fff'}}>
+     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'12px'}}>
+      <div>
+       <h2 style={{margin:'0 0 4px'}}>Evaluation history</h2>
+       <p style={{margin:0,color:'#6b7280',fontSize:'14px'}}>Latest user-owned evaluations from the API.</p>
+      </div>
+      <button onClick={loadHistory} style={{padding:'10px 14px',borderRadius:'10px',border:'1px solid #d1d5db',background:'#fff',cursor:'pointer'}}>Load history</button>
+     </div>
+     <p style={{fontSize:'13px',color:'#6b7280'}}>History status: {historyStatus}</p>
+     <div style={{overflowX:'auto'}}>
+      <table style={{width:'100%',borderCollapse:'collapse',fontSize:'14px'}}>
+       <thead>
+        <tr style={{textAlign:'left',borderBottom:'1px solid #e5e7eb'}}>
+         <th style={{padding:'10px'}}>Job ID</th>
+         <th style={{padding:'10px'}}>Status</th>
+         <th style={{padding:'10px'}}>Organization</th>
+        </tr>
+       </thead>
+       <tbody>
+        {history.length===0 && <tr><td colSpan={3} style={{padding:'12px',color:'#6b7280'}}>No evaluations loaded.</td></tr>}
+        {history.map((item)=>(
+         <tr key={item.job_id} style={{borderBottom:'1px solid #f3f4f6'}}>
+          <td style={{padding:'10px',fontFamily:'monospace',wordBreak:'break-all'}}>{item.job_id}</td>
+          <td style={{padding:'10px'}}>{item.status}</td>
+          <td style={{padding:'10px'}}>{item.organization_id || '—'}</td>
+         </tr>
+        ))}
+       </tbody>
+      </table>
+     </div>
+    </section>
+   </div>
   </section>
  </main>
  )
