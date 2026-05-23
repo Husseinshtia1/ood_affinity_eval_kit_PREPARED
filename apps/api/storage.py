@@ -10,6 +10,7 @@ from .settings import get_settings
 from .storage_backends import LocalStorageBackend, S3StorageBackend, get_storage_backend
 
 settings = get_settings()
+GENERATED_FILES = ("metadata.json", "report.json", "parity_points.json")
 
 
 def require_local_backend() -> LocalStorageBackend:
@@ -25,31 +26,43 @@ def local_fallback_dir(job_id: str) -> Path:
     return path
 
 
+def local_object_path(job_id: str, filename: str) -> Path:
+    backend = get_storage_backend()
+    if isinstance(backend, LocalStorageBackend):
+        return backend.object_path(job_id, filename)
+    return local_fallback_dir(job_id) / filename
+
+
+def sync_to_remote_if_needed(job_id: str, filename: str, local_path: Path) -> None:
+    backend = get_storage_backend()
+    if isinstance(backend, S3StorageBackend):
+        backend.upload_file(local_path, job_id, filename)
+
+
 def job_dir(job_id: str) -> Path:
     return require_local_backend().job_dir(job_id)
 
 
 def predictions_path(job_id: str) -> Path:
-    backend = get_storage_backend()
-    if isinstance(backend, LocalStorageBackend):
-        return backend.object_path(job_id, "predictions.csv")
-    return local_fallback_dir(job_id) / "predictions.csv"
+    return local_object_path(job_id, "predictions.csv")
 
 
 def report_path(job_id: str) -> Path:
-    return require_local_backend().object_path(job_id, "report.json")
+    return local_object_path(job_id, "report.json")
 
 
 def points_path(job_id: str) -> Path:
-    return require_local_backend().object_path(job_id, "parity_points.json")
+    return local_object_path(job_id, "parity_points.json")
 
 
 def metadata_path(job_id: str) -> Path:
-    return require_local_backend().object_path(job_id, "metadata.json")
+    return local_object_path(job_id, "metadata.json")
 
 
 def write_metadata(job_id: str, payload: dict) -> None:
-    metadata_path(job_id).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    path = metadata_path(job_id)
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    sync_to_remote_if_needed(job_id, "metadata.json", path)
 
 
 def read_metadata(job_id: str) -> dict:
@@ -57,6 +70,13 @@ def read_metadata(job_id: str) -> dict:
     if not path.exists():
         raise HTTPException(status_code=404, detail="Evaluation job not found")
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def sync_generated_files(job_id: str) -> None:
+    for filename in GENERATED_FILES:
+        path = local_object_path(job_id, filename)
+        if path.exists():
+            sync_to_remote_if_needed(job_id, filename, path)
 
 
 def update_status(job_id: str, status: JobStatus, detail: str | None = None) -> None:
@@ -83,20 +103,15 @@ async def save_upload(job_id: str, upload: UploadFile) -> Path:
                 raise HTTPException(status_code=413, detail="Uploaded file exceeds maximum allowed size")
             buffer.write(chunk)
 
-    backend = get_storage_backend()
-    if isinstance(backend, S3StorageBackend):
-        backend.upload_file(target, job_id, "predictions.csv")
-
+    sync_to_remote_if_needed(job_id, "predictions.csv", target)
     return target
 
 
 def delete_job(job_id: str) -> None:
     backend = get_storage_backend()
-    if isinstance(backend, LocalStorageBackend):
-        path = backend.root / job_id
-        if path.exists():
-            shutil.rmtree(path)
-        return
+    if isinstance(backend, S3StorageBackend):
+        for filename in ("predictions.csv",) + GENERATED_FILES:
+            backend.delete_object(job_id, filename)
 
     path = settings.temp_storage_dir / job_id
     if path.exists():
