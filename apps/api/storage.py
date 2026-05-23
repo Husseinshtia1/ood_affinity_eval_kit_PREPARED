@@ -7,30 +7,36 @@ from fastapi import UploadFile, HTTPException
 
 from .schemas import JobStatus
 from .settings import get_settings
+from .storage_backends import LocalStorageBackend, get_storage_backend
 
 settings = get_settings()
 
 
+def require_local_backend() -> LocalStorageBackend:
+    backend = get_storage_backend()
+    if not isinstance(backend, LocalStorageBackend):
+        raise HTTPException(status_code=501, detail="This storage operation is not yet implemented for non-local backends")
+    return backend
+
+
 def job_dir(job_id: str) -> Path:
-    path = settings.temp_storage_dir / job_id
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    return require_local_backend().job_dir(job_id)
 
 
 def predictions_path(job_id: str) -> Path:
-    return job_dir(job_id) / "predictions.csv"
+    return require_local_backend().object_path(job_id, "predictions.csv")
 
 
 def report_path(job_id: str) -> Path:
-    return job_dir(job_id) / "report.json"
+    return require_local_backend().object_path(job_id, "report.json")
 
 
 def points_path(job_id: str) -> Path:
-    return job_dir(job_id) / "parity_points.json"
+    return require_local_backend().object_path(job_id, "parity_points.json")
 
 
 def metadata_path(job_id: str) -> Path:
-    return job_dir(job_id) / "metadata.json"
+    return require_local_backend().object_path(job_id, "metadata.json")
 
 
 def write_metadata(job_id: str, payload: dict) -> None:
@@ -71,6 +77,7 @@ async def save_upload(job_id: str, upload: UploadFile) -> Path:
 
 
 def delete_job(job_id: str) -> None:
-    path = settings.temp_storage_dir / job_id
+    backend = require_local_backend()
+    path = backend.root / job_id
     if path.exists():
         shutil.rmtree(path)
