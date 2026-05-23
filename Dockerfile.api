@@ -3,5 +3,6 @@ WORKDIR /app
 COPY requirements-api.txt .
 RUN pip install -r requirements-api.txt
 COPY . .
+RUN chmod +x scripts/api_entrypoint.sh
 EXPOSE 8000
-CMD ["uvicorn","apps.api.main:app","--host","0.0.0.0","--port","8000"]
+CMD ["sh","scripts/api_entrypoint.sh"]
