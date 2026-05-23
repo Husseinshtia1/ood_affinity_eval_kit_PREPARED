@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements-api.txt
 
 COPY apps ./apps
 COPY worker ./worker
-COPY migrations ./migrations
+COPY alembic ./alembic
 COPY alembic.ini ./alembic.ini
 COPY scripts ./scripts
 
