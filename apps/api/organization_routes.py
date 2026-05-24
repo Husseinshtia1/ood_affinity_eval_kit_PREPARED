@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
-from worker.tasks import send_invitation_email_task
 from .audit import write_audit_event
 from .database import get_db
 from .models import User, Invitation
 from .rbac import require_roles
+from .task_dispatcher import dispatch_invitation_email
 
 router = APIRouter(prefix='/organization', tags=['organization'])
 
@@ -54,11 +54,11 @@ def invite_user(data: InviteUserRequest,current_user: User = Depends(require_rol
     db.add(invitation)
     db.flush()
 
-    send_invitation_email_task.delay(invitation.id)
-    write_audit_event(db,'USER_INVITED','invitation',str(invitation.id),actor=current_user,metadata={'email':data.email,'role':data.role,'notification':'queued'})
+    dispatch_result=dispatch_invitation_email(invitation.id)
+    write_audit_event(db,'USER_INVITED','invitation',str(invitation.id),actor=current_user,metadata={'email':data.email,'role':data.role,'notification':dispatch_result})
     db.commit()
 
-    return {'invitation_id':invitation.id,'email':invitation.email,'role':invitation.role,'expires_at':invitation.expires_at.isoformat(),'message':'Invitation queued for delivery'}
+    return {'invitation_id':invitation.id,'email':invitation.email,'role':invitation.role,'expires_at':invitation.expires_at.isoformat(),'message':'Invitation processed for delivery','dispatch':dispatch_result}
 
 @router.post('/invitations/{invitation_id}/resend')
 def resend_invitation(invitation_id:int,current_user: User = Depends(require_roles('owner','admin')),db: Session = Depends(get_db)):
@@ -77,10 +77,10 @@ def resend_invitation(invitation_id:int,current_user: User = Depends(require_rol
     invitation.last_delivery_error=None
     db.flush()
 
-    send_invitation_email_task.delay(invitation.id)
-    write_audit_event(db,'INVITATION_RESENT','invitation',str(invitation.id),actor=current_user,metadata={'email':invitation.email,'role':invitation.role})
+    dispatch_result=dispatch_invitation_email(invitation.id)
+    write_audit_event(db,'INVITATION_RESENT','invitation',str(invitation.id),actor=current_user,metadata={'email':invitation.email,'role':invitation.role,'notification':dispatch_result})
     db.commit()
-    return {'resent':True,'invitation':serialize_invitation(invitation)}
+    return {'resent':True,'invitation':serialize_invitation(invitation),'dispatch':dispatch_result}
 
 @router.delete('/invitations/{invitation_id}')
 def revoke_invitation(invitation_id:int,current_user: User = Depends(require_roles('owner','admin')),db: Session = Depends(get_db)):
