@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from .hal_learning import build_hal_learning_summary
 from .hal_memory import append_hal_memory_record, read_hal_memory
+from .hal_metrics import hal_autonomy_metrics_dict
 from .hal_optimizer import runtime_optimization_dict
 from .hosting_adaptation import hosting_capabilities_dict
 from .runtime_mutation import runtime_mutation_plan_dict
@@ -39,3 +40,8 @@ def hal_learning(limit: int = 100):
 @router.get('/optimization')
 def hal_optimization():
     return runtime_optimization_dict()
+
+
+@router.get('/metrics')
+def hal_metrics():
+    return hal_autonomy_metrics_dict()
