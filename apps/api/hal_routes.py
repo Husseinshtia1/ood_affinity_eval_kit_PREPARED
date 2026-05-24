@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from .hal_memory import append_hal_memory_record, read_hal_memory
 from .hosting_adaptation import hosting_capabilities_dict
 from .runtime_mutation import runtime_mutation_plan_dict
 
@@ -16,3 +17,13 @@ def hal_status():
 @router.get('/mutation-plan')
 def hal_mutation_plan():
     return runtime_mutation_plan_dict()
+
+
+@router.post('/memory/capture')
+def hal_memory_capture():
+    return append_hal_memory_record()
+
+
+@router.get('/memory')
+def hal_memory(limit: int = 20):
+    return {'items': read_hal_memory(limit=limit)}
