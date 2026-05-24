@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from .hal_deployment_generator import hal_deployment_plan_dict
 from .hal_learning import build_hal_learning_summary
 from .hal_memory import append_hal_memory_record, read_hal_memory
 from .hal_metrics import hal_autonomy_metrics_dict
@@ -45,3 +46,8 @@ def hal_optimization():
 @router.get('/metrics')
 def hal_metrics():
     return hal_autonomy_metrics_dict()
+
+
+@router.get('/deployment-plan')
+def hal_deployment_plan():
+    return hal_deployment_plan_dict()
