@@ -24,3 +24,20 @@ def dispatch_evaluation(job_id: str, predictions_path: str) -> dict:
 
     evaluate_job(job_id, str(Path(predictions_path)))
     return {'dispatched': True, 'mode': 'inline'}
+
+
+def dispatch_invitation_email(invitation_id: int) -> dict:
+    """Dispatch invitation delivery according to HAL runtime capabilities."""
+
+    plan = build_runtime_mutation_plan()
+
+    if plan.task_execution == 'celery-worker':
+        from worker.tasks import send_invitation_email_task
+
+        send_invitation_email_task.delay(invitation_id)
+        return {'dispatched': True, 'mode': 'celery-worker'}
+
+    from worker.tasks import send_invitation_email_task
+
+    send_invitation_email_task(invitation_id)
+    return {'dispatched': True, 'mode': 'inline'}
