@@ -7,7 +7,7 @@ from .auth_dependencies import get_current_user
 from .audit import write_audit_event
 from .database import get_db
 from .models import User, Evaluation
-from worker.tasks import evaluate_job
+from .task_dispatcher import dispatch_evaluation
 import json
 
 router=APIRouter(prefix='/v1/evaluations',tags=['evaluations'])
@@ -48,8 +48,8 @@ async def run(model_name:str=Form(...),training_set_hash:str=Form(...),predictio
  db.commit()
 
  write_metadata(job_id,{'evaluation_id':job_id,'model_name':model_name,'training_set_hash':training_set_hash,'status':JobStatus.PENDING.value,'owner_id':current_user.id,'organization_id':current_user.organization_id})
- evaluate_job.delay(job_id,str(path))
- return {'status':JobStatus.PENDING,'evaluation_id':job_id}
+ dispatch_result=dispatch_evaluation(job_id,str(path))
+ return {'status':JobStatus.PENDING,'evaluation_id':job_id,'dispatch':dispatch_result}
 
 @router.get('/{job_id}')
 def status(job_id:str,current_user:User=Depends(get_current_user),db:Session=Depends(get_db)):
