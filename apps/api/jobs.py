@@ -8,6 +8,7 @@ from .audit import write_audit_event
 from .database import get_db
 from .models import User, Evaluation
 from .task_dispatcher import dispatch_evaluation
+from .upload_guard import enforce_upload_limit
 import json
 
 router=APIRouter(prefix='/v1/evaluations',tags=['evaluations'])
@@ -38,6 +39,7 @@ def list_evaluations(current_user:User=Depends(get_current_user),db:Session=Depe
 
 @router.post('/run')
 async def run(model_name:str=Form(...),training_set_hash:str=Form(...),predictions_file:UploadFile=File(...),current_user:User=Depends(get_current_user),db:Session=Depends(get_db)):
+ await enforce_upload_limit(predictions_file)
  job_id=str(uuid4())
  path=await save_upload(job_id,predictions_file)
 
