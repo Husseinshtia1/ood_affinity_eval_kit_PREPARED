@@ -10,6 +10,7 @@ from .auth_me import router as auth_me_router
 from .audit_routes import router as audit_router
 from .organization_routes import router as organization_router
 from .invitation_routes import router as invitation_router
+from .hal_routes import router as hal_router
 
 settings=get_settings()
 assert_safe_production_config(settings)
@@ -32,6 +33,7 @@ app.include_router(auth_me_router)
 app.include_router(audit_router)
 app.include_router(organization_router)
 app.include_router(invitation_router)
+app.include_router(hal_router)
 
 @app.get('/health')
 def health():
