@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from .hal_artifacts import generate_hal_deployment_artifacts
+from .hal_complexity import hal_complexity_decision_dict
 from .hal_deployment_generator import hal_deployment_plan_dict
 from .hal_learning import build_hal_learning_summary
 from .hal_memory import append_hal_memory_record, read_hal_memory
@@ -57,3 +58,8 @@ def hal_deployment_plan():
 @router.post('/artifacts/generate')
 def hal_artifacts_generate():
     return generate_hal_deployment_artifacts()
+
+
+@router.get('/complexity')
+def hal_complexity():
+    return hal_complexity_decision_dict()
