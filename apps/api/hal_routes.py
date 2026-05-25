@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from .hal_artifacts import generate_hal_deployment_artifacts
 from .hal_complexity import hal_complexity_decision_dict
+from .hal_context_filters import hal_context_filter_dict
 from .hal_deployment_generator import hal_deployment_plan_dict
 from .hal_learning import build_hal_learning_summary
 from .hal_memory import append_hal_memory_record, read_hal_memory
@@ -69,3 +70,8 @@ def hal_complexity():
 @router.get('/outcomes')
 def hal_outcomes(limit: int = 50):
     return {'items': read_hal_outcomes(limit=limit)}
+
+
+@router.get('/context-filter')
+def hal_context_filter():
+    return hal_context_filter_dict()
