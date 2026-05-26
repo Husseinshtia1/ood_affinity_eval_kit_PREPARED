@@ -6,11 +6,13 @@ from .hal_artifacts import generate_hal_deployment_artifacts
 from .hal_complexity import hal_complexity_decision_dict
 from .hal_context_filters import hal_context_filter_dict
 from .hal_deployment_generator import hal_deployment_plan_dict
+from .hal_feedback import build_hal_feedback_summary
 from .hal_learning import build_hal_learning_summary
 from .hal_memory import append_hal_memory_record, read_hal_memory
 from .hal_metrics import hal_autonomy_metrics_dict
 from .hal_optimizer import runtime_optimization_dict
 from .hal_outcomes import read_hal_outcomes
+from .hal_reweighting import hal_decision_reweighting_dict
 from .hosting_adaptation import hosting_capabilities_dict
 from .runtime_mutation import runtime_mutation_plan_dict
 
@@ -75,3 +77,13 @@ def hal_outcomes(limit: int = 50):
 @router.get('/context-filter')
 def hal_context_filter():
     return hal_context_filter_dict()
+
+
+@router.get('/feedback')
+def hal_feedback(limit: int = 200):
+    return build_hal_feedback_summary(limit=limit)
+
+
+@router.get('/reweighting')
+def hal_reweighting():
+    return hal_decision_reweighting_dict()
