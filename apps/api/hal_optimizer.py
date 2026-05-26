@@ -15,7 +15,57 @@ class HALRuntimeOptimization:
     persistence_policy: str
     customer_data_policy: str
     recommended_next_step: str
+    active_rule_groups: list[str]
+    suppressed_rule_groups: list[str]
     rationale: list[str]
+
+
+def infer_rule_groups(profile: str) -> tuple[list[str], list[str]]:
+    if profile == 'free-demo':
+        return (
+            [
+                'sqlite-bootstrap-rules',
+                'inline-task-rules',
+                'temporary-storage-rules',
+                'log-only-email-rules',
+                'minimal-upload-limit-rules',
+            ],
+            [
+                'managed-postgres-rules',
+                'redis-worker-rules',
+                's3-persistent-storage-rules',
+                'smtp-delivery-rules',
+                'billing-production-rules',
+            ],
+        )
+    if profile == 'production':
+        return (
+            [
+                'managed-postgres-rules',
+                'redis-worker-rules',
+                's3-persistent-storage-rules',
+                'smtp-delivery-rules',
+                'monitoring-and-backup-rules',
+            ],
+            [
+                'sqlite-bootstrap-rules',
+                'temporary-storage-rules',
+                'log-only-email-rules',
+            ],
+        )
+    return (
+        [
+            'partial-managed-transition-rules',
+            'database-gap-rules',
+            'queue-gap-rules',
+            'storage-gap-rules',
+            'conservative-upload-limit-rules',
+        ],
+        [
+            'billing-production-rules',
+            'full-autonomous-production-rules',
+        ],
+    )
 
 
 def build_runtime_optimization() -> HALRuntimeOptimization:
@@ -48,6 +98,17 @@ def build_runtime_optimization() -> HALRuntimeOptimization:
         recommended_next_step = 'Complete missing managed services before production launch.'
         rationale.append('Some managed services are available, but the profile is not fully production-safe.')
 
+    active_rule_groups, suppressed_rule_groups = infer_rule_groups(profile)
+
+    if 'minimal-upload-limit-rules' in active_rule_groups:
+        max_upload_mb = min(max_upload_mb, 5)
+        rationale.append('Context filter activated minimal upload limits for free/demo hosting.')
+    if 'conservative-upload-limit-rules' in active_rule_groups:
+        max_upload_mb = min(max_upload_mb, 10)
+        rationale.append('Context filter activated conservative upload limits for partial-managed hosting.')
+    if 'inline-task-rules' in active_rule_groups and plan.task_execution != 'celery-worker':
+        rationale.append('Context filter prefers inline or disabled task execution for lightweight hosting.')
+
     if plan.task_execution != 'celery-worker':
         rationale.append('Celery worker is not available; using inline or disabled task mode.')
 
@@ -64,6 +125,8 @@ def build_runtime_optimization() -> HALRuntimeOptimization:
         persistence_policy=persistence_policy,
         customer_data_policy=customer_data_policy,
         recommended_next_step=recommended_next_step,
+        active_rule_groups=active_rule_groups,
+        suppressed_rule_groups=suppressed_rule_groups,
         rationale=rationale,
     )
 
